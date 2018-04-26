@@ -29,7 +29,6 @@ public class SendTask extends AsyncTask<Void,Void,Void> {
     @Override
     protected Void doInBackground(Void... voids) {
         try{
-            Log.d("hhh","ok");
             byte[] bytes=content.getBytes();
             dp=new DatagramPacket(bytes,bytes.length, InetAddress.getByName(ip),8002);
             ds.send(dp);

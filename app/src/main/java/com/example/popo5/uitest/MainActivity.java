@@ -1,6 +1,7 @@
 package com.example.popo5.uitest;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -44,16 +45,6 @@ public class MainActivity extends AppCompatActivity {
         }catch (Exception e){
             e.printStackTrace();
         }
-        receiveTask=new ReceiveTask(new MsgListener() {
-            @Override
-            public void onReceiveMsg(String str) {
-                Msg msg=new Msg(str,Msg.TYPE_RECEIVED);
-                msgList.add(msg);
-                adapter.notifyItemInserted(msgList.size()-1);
-                msgRecyclerview.scrollToPosition(msgList.size()-1);
-            }
-        });
-        receiveTask.execute();
         send.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
@@ -69,9 +60,19 @@ public class MainActivity extends AppCompatActivity {
                             inputText.setText("");
                         }
                     });
-                   sendTask.execute();
+                   sendTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                 }
             }
         });
+        receiveTask=new ReceiveTask(new MsgListener() {
+            @Override
+            public void onReceiveMsg(String str) {
+                Msg msg=new Msg(str,Msg.TYPE_RECEIVED);
+                msgList.add(msg);
+                adapter.notifyItemInserted(msgList.size()-1);
+                msgRecyclerview.scrollToPosition(msgList.size()-1);
+            }
+        });
+        receiveTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 }

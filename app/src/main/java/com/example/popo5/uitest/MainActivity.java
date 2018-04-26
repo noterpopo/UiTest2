@@ -1,27 +1,38 @@
 package com.example.popo5.uitest;
 
-import android.support.v7.app.AppCompatActivity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+    private String mip;
     private List<Msg> msgList=new ArrayList<>();
     private EditText inputText;
     private Button send;
     private RecyclerView msgRecyclerview;
     private MsgAdapter adapter;
+    private ReceiveTask receiveTask;
+    private DatagramPacket dp=null;
+    private DatagramSocket ds=null;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        iniMsgs();
+        Intent intent=getIntent();
+        mip=intent.getStringExtra("ip");
         inputText=(EditText)findViewById(R.id.input_text);
         send=(Button)findViewById(R.id.send);
         msgRecyclerview=(RecyclerView)findViewById(R.id.recyclerview);
@@ -29,6 +40,11 @@ public class MainActivity extends AppCompatActivity {
         msgRecyclerview.setLayoutManager(layoutManager);
         adapter=new MsgAdapter(msgList);
         msgRecyclerview.setAdapter(adapter);
+        try {
+            ds=new DatagramSocket(8001);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         send.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
@@ -39,16 +55,25 @@ public class MainActivity extends AppCompatActivity {
                     adapter.notifyItemInserted(msgList.size()-1);
                     msgRecyclerview.scrollToPosition(msgList.size()-1);
                     inputText.setText("");
+                    byte[] bytes=content.getBytes();
+                    try{
+                        dp=new DatagramPacket(bytes,bytes.length, InetAddress.getByName(mip),8002);
+                        ds.send(dp);
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
                 }
             }
         });
-        }
-    private void iniMsgs(){
-        Msg msg1=new Msg("Hello guys",Msg.TYPE_RECEIVED);
-        msgList.add(msg1);
-        Msg msg2=new Msg("Hello",Msg.TYPE_SEND);
-        msgList.add(msg2);
-        Msg msg3=new Msg("Wonderful",Msg.TYPE_RECEIVED);
-        msgList.add(msg3);
+        receiveTask=new ReceiveTask(new MsgListener() {
+            @Override
+            public void onReceiveMsg(String str) {
+                Msg msg=new Msg(str,Msg.TYPE_RECEIVED);
+                msgList.add(msg);
+                adapter.notifyItemInserted(msgList.size()-1);
+                msgRecyclerview.scrollToPosition(msgList.size()-1);
+            }
+        });
+        receiveTask.execute();
     }
 }

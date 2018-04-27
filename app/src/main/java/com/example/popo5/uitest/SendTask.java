@@ -16,7 +16,7 @@ public class SendTask extends AsyncTask<Void,Void,Void> {
     DatagramSocket ds=null;
     DatagramPacket dp=null;
     SendListener sendListener=null;
-    String ip=null;
+    String ip;
 
     public SendTask(String ip,String content, DatagramSocket ds, DatagramPacket dp,SendListener sendListener) {
         this.content = content;
@@ -41,6 +41,5 @@ public class SendTask extends AsyncTask<Void,Void,Void> {
     @Override
     protected void onPostExecute(Void aVoid) {
         sendListener.onSend(content);
-        Log.d("hhh",content);
     }
 }

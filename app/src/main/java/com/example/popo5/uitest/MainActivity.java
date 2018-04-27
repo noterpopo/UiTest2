@@ -1,6 +1,7 @@
 package com.example.popo5.uitest;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -11,7 +12,6 @@ import android.widget.EditText;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,18 +50,17 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 String content=inputText.getText().toString();
                 if(!"".equals(content)){
-                    Msg msg=new Msg(content,Msg.TYPE_SEND);
-                    msgList.add(msg);
-                    adapter.notifyItemInserted(msgList.size()-1);
-                    msgRecyclerview.scrollToPosition(msgList.size()-1);
-                    inputText.setText("");
-                    byte[] bytes=content.getBytes();
-                    try{
-                        dp=new DatagramPacket(bytes,bytes.length, InetAddress.getByName(mip),8002);
-                        ds.send(dp);
-                    }catch (Exception e){
-                        e.printStackTrace();
-                    }
+                   SendTask sendTask= new SendTask(mip,content, ds, dp, new SendListener() {
+                        @Override
+                        public void onSend(String content) {
+                            Msg msg=new Msg(content,Msg.TYPE_SEND);
+                            msgList.add(msg);
+                            adapter.notifyItemInserted(msgList.size()-1);
+                            msgRecyclerview.scrollToPosition(msgList.size()-1);
+                            inputText.setText("");
+                        }
+                    });
+                   sendTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                 }
             }
         });
@@ -74,6 +73,6 @@ public class MainActivity extends AppCompatActivity {
                 msgRecyclerview.scrollToPosition(msgList.size()-1);
             }
         });
-        receiveTask.execute();
+        receiveTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 }
